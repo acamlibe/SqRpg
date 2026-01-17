@@ -12,11 +12,11 @@ type Tile struct {
 	X int
 	Y int
 
-	Entity *Drawable
+	Entity Drawable
 }
 
 type Drawable interface {
-	Draw()
+	Draw(x1, y1, x2, y2 int)
 }
 
 const (
@@ -36,6 +36,10 @@ var (
 	backgroundColor = rl.Black
 )
 
+var (
+	player Player
+)
+
 var grid [][]Tile
 
 func init() {
@@ -51,7 +55,13 @@ func init() {
 		grid[y] = make([]Tile, width)
 
 		for x := range grid[y] {
-			grid[y][x] = Tile{X: x, Y: y}
+			t := Tile{X: x, Y: y}
+
+			if RandBool() {
+				t.Entity = Tree{}
+			}
+
+			grid[y][x] = t
 		}
 	}
 }
