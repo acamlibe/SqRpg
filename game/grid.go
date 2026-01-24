@@ -33,6 +33,8 @@ func NewGrid(rows, cols int) Grid {
 		}
 	}
 
+	tileMap[5][5].Entity = entities.Player{}
+
 	return Grid{Tiles: tileMap}
 }
 
@@ -48,12 +50,21 @@ func (g *Grid) drawTile(row, col int, tile Tile) {
 	rl.PushMatrix()
 	rl.Translatef(float32(col*constants.TileSize), float32(row*constants.TileSize), 0)
 
+	tileX, tileY := 0, 0
+	tileSize := constants.TileSize
+
+	rl.DrawRectangle(int32(tileX), int32(tileY), int32(tileSize), int32(tileSize), rl.Black)
+
 	if tile.Entity != nil {
 		tile.Entity.DrawLocal()
-	} else {
-		// Empty space
-		rl.DrawRectangle(0, 0, constants.TileSize, constants.TileSize, rl.Black)
 	}
+
+	// Draw subtle outline
+	rl.DrawRectangleLines(
+		int32(tileX), int32(tileY),
+		int32(tileSize), int32(tileSize),
+		rl.Color{R: 60, G: 60, B: 60, A: 40}, // very subtle dark line, semi-transparent
+	)
 
 	rl.PopMatrix()
 }

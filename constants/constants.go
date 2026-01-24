@@ -16,6 +16,6 @@ var (
 )
 
 var (
-	GunmetalColor = rl.Color{R: 40, G: 45, B: 50, A: 255}
-	CharcoalGray  = rl.Color{R: 35, G: 35, B: 40, A: 255}
+	GunmetalColor     = rl.Color{R: 40, G: 45, B: 50, A: 255}
+	CharcoalGrayColor = rl.Color{R: 35, G: 35, B: 40, A: 255}
 )
