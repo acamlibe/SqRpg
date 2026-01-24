@@ -9,6 +9,8 @@ type Tree struct {
 }
 
 func (t *Tree) DrawLocal() {
-	rl.DrawRectangle(0, 0, constants.TileSize, constants.TileSize, rl.Green)
-	rl.DrawRectangle(constants.TileSize/2, 0, 2, constants.TileSize, rl.Brown)
+	var tile int32 = constants.TileSize
+
+	rl.DrawRectangle(0, 0, tile, tile, rl.DarkGreen)
+	rl.DrawRectangle(tile/2-2, 2, 4, tile-2, rl.DarkBrown)
 }

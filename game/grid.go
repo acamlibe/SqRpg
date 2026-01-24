@@ -3,8 +3,6 @@ package game
 import (
 	"github.com/acamlibe/SqRpg/constants"
 	"github.com/acamlibe/SqRpg/drawable"
-	"github.com/acamlibe/SqRpg/game/entities"
-	"github.com/acamlibe/SqRpg/utils"
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
@@ -23,17 +21,9 @@ func NewGrid(rows, cols int) *Grid {
 		tileMap[y] = make([]Tile, cols)
 
 		for x := range tileMap[y] {
-			t := Tile{}
-
-			if utils.RandChance(10) {
-				t.Entity = &entities.Tree{}
-			}
-
-			tileMap[y][x] = t
+			tileMap[y][x] = Tile{}
 		}
 	}
-
-	tileMap[5][5].Entity = &entities.Player{}
 
 	return &Grid{Tiles: &tileMap}
 }
