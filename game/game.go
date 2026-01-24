@@ -2,9 +2,12 @@ package game
 
 import (
 	"math/rand"
+	"slices"
 	"time"
 
+	"github.com/acamlibe/SqRpg/constants"
 	"github.com/acamlibe/SqRpg/game/entities"
+	"github.com/acamlibe/SqRpg/utils"
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
@@ -15,42 +18,97 @@ type Game struct {
 	playerTile *Tile
 	playerRow  int
 	playerCol  int
+
+	moveCooldown     float32 // seconds until next allowed move
+	moveCooldownTime float32 // max cooldown duration
+
+	targetRow int
+	targetCol int
 }
 
 func NewGame(rows, cols int) *Game {
-	g := &Game{Grid: NewGrid(rows, cols), Player: &entities.Player{}}
+	g := &Game{
+		Grid:             NewGrid(rows, cols),
+		Player:           &entities.Player{},
+		moveCooldown:     0,
+		moveCooldownTime: 0.25, // move every 0.25 seconds (4 moves/sec)
+	}
 	g.generateWorld()
 	return g
 }
 
 func (g *Game) Input() {
-	if rl.IsKeyPressed(rl.KeyA) || rl.IsKeyPressed(rl.KeyLeft) {
-		g.movePlayerTo(g.playerRow, g.playerCol-1)
-	} else if rl.IsKeyPressed(rl.KeyW) || rl.IsKeyPressed(rl.KeyUp) {
-		g.movePlayerTo(g.playerRow-1, g.playerCol)
-	} else if rl.IsKeyPressed(rl.KeyD) || rl.IsKeyPressed(rl.KeyRight) {
-		g.movePlayerTo(g.playerRow, g.playerCol+1)
-	} else if rl.IsKeyPressed(rl.KeyS) || rl.IsKeyPressed(rl.KeyDown) {
-		g.movePlayerTo(g.playerRow+1, g.playerCol)
+	row := g.playerRow
+	col := g.playerCol
+
+	tileSize := constants.TileSize
+	mouseX := int(rl.GetMouseX())
+	mouseY := int(rl.GetMouseY())
+
+	if rl.IsMouseButtonReleased(rl.MouseButtonLeft) {
+		col = (mouseX - constants.GridPadding) / tileSize
+		row = (mouseY - constants.GridPadding) / tileSize
+
+		row = utils.IntMin(utils.IntMax(row, 0), len(g.Grid.Tiles)-1)
+		col = utils.IntMin(utils.IntMax(col, 0), len(g.Grid.Tiles[0])-1)
+
+		g.targetRow = row
+		g.targetCol = col
 	}
 }
 
 func (g *Game) Update() {
-	g.Player.AnimTime += rl.GetFrameTime()
+	dt := rl.GetFrameTime()
+	g.Player.AnimTime += dt
+
+	if g.moveCooldown > 0 {
+		g.moveCooldown -= dt
+	}
+
+	if g.moveCooldown > 0 {
+		return // too soon to move
+	}
+
+	nextRow := g.playerRow
+	nextCol := g.playerCol
+
+	if g.targetRow != nextRow || g.targetCol != nextCol {
+		if nextRow < g.targetRow {
+			nextRow++
+		} else if nextRow > g.targetRow {
+			nextRow--
+		} else if nextCol < g.targetCol {
+			nextCol++
+		} else if nextCol > g.targetCol {
+			nextCol--
+		}
+
+		g.movePlayerTo(nextRow, nextCol)
+		g.moveCooldown = g.moveCooldownTime // reset cooldown
+	}
 }
 
 func (g *Game) movePlayerTo(row, col int) {
 	tileMap := g.Grid.Tiles
-
 	tile := &tileMap[row][col]
-	tile.Entity = g.Player
+
+	if !tile.Walkable {
+		return
+	}
 
 	g.playerRow = row
 	g.playerCol = col
 
-	if g.playerTile != nil {
-		g.playerTile.Entity = nil
+	if g.playerTile != nil && g.playerTile.Entities != nil {
+		for i, entity := range g.playerTile.Entities {
+			if entity == g.Player {
+				g.playerTile.Entities = slices.Delete(g.playerTile.Entities, i, i+1)
+				break
+			}
+		}
 	}
+
+	tile.Entities = append(tile.Entities, g.Player)
 
 	g.playerTile = tile
 }
@@ -75,13 +133,16 @@ func (g *Game) generateWorld() {
 	// Clear any existing entities
 	for y := range rows {
 		for x := range cols {
-			tiles[y][x].Entity = nil
+			tiles[y][x].Entities = nil
 		}
 	}
 
 	// Place player randomly
 	playerRow := rng.Intn(rows)
 	playerCol := rng.Intn(cols)
+
+	g.playerRow = playerRow
+	g.playerCol = playerCol
 
 	g.movePlayerTo(playerRow, playerCol)
 
@@ -98,7 +159,8 @@ func (g *Game) generateWorld() {
 				continue
 			}
 			if rng.Float32() < 0.4 {
-				tiles[y][x].Entity = &entities.Tree{}
+				tiles[y][x].Walkable = false
+				tiles[y][x].Entities = append(tiles[y][x].Entities, &entities.Tree{})
 			}
 		}
 	}
@@ -112,8 +174,9 @@ func (g *Game) generateWorld() {
 		walkLen := baseWalk + rng.Intn(baseWalk/2+1)
 
 		for range walkLen {
-			if tiles[sy][sx].Entity == nil {
-				tiles[sy][sx].Entity = &entities.Tree{}
+			if tiles[sy][sx].Entities == nil {
+				tiles[sy][sx].Walkable = false
+				tiles[sy][sx].Entities = append(tiles[sy][sx].Entities, &entities.Tree{})
 			}
 
 			switch rng.Intn(4) {
@@ -148,10 +211,11 @@ func (g *Game) generateWorld() {
 			if y == playerRow && x == playerCol {
 				continue
 			}
-			if tiles[y][x].Entity == nil {
+			if tiles[y][x].Entities == nil {
 				neighbors := countTreeNeighbors(tiles, y, x)
 				if neighbors >= 4 && rng.Float32() < 0.6 {
-					tiles[y][x].Entity = &entities.Tree{}
+					tiles[y][x].Walkable = false
+					tiles[y][x].Entities = append(tiles[y][x].Entities, &entities.Tree{})
 				}
 			}
 		}
@@ -173,9 +237,13 @@ func countTreeNeighbors(tiles [][]Tile, row, col int) int {
 			if ny < 0 || ny >= rows || nx < 0 || nx >= cols {
 				continue
 			}
-			if _, ok := tiles[ny][nx].Entity.(*entities.Tree); ok {
-				count++
+
+			for _, entity := range tiles[ny][nx].Entities {
+				if _, ok := entity.(*entities.Tree); ok {
+					count++
+				}
 			}
+
 		}
 	}
 

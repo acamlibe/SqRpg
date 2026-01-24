@@ -11,7 +11,8 @@ type Grid struct {
 }
 
 type Tile struct {
-	Entity drawable.Drawable
+	Entities []drawable.Drawable
+	Walkable bool
 }
 
 func NewGrid(rows, cols int) *Grid {
@@ -21,7 +22,7 @@ func NewGrid(rows, cols int) *Grid {
 		tileMap[y] = make([]Tile, cols)
 
 		for x := range tileMap[y] {
-			tileMap[y][x] = Tile{}
+			tileMap[y][x] = Tile{Walkable: true}
 		}
 	}
 
@@ -45,15 +46,15 @@ func (g *Grid) drawTile(row, col int, tile *Tile) {
 
 	rl.DrawRectangle(int32(tileX), int32(tileY), int32(tileSize), int32(tileSize), rl.Black)
 
-	if tile.Entity != nil {
-		tile.Entity.DrawLocal()
+	for _, entity := range tile.Entities {
+		entity.DrawLocal()
 	}
 
 	// Draw subtle outline
 	rl.DrawRectangleLines(
 		int32(tileX), int32(tileY),
 		int32(tileSize), int32(tileSize),
-		rl.Color{R: 60, G: 60, B: 60, A: 40}, // very subtle dark line, semi-transparent
+		rl.Color{R: 60, G: 60, B: 60, A: 80}, // very subtle dark line, semi-transparent
 	)
 
 	rl.PopMatrix()

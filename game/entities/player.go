@@ -7,10 +7,6 @@ import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
-const (
-	headRadius = 4
-)
-
 type Player struct {
 	AnimTime float32
 }
@@ -24,18 +20,18 @@ func (p *Player) DrawLocal() {
 	var headX int32 = tile / 2
 	var headY int32 = tile/4 + int32(bob)
 	var bodyX int32 = tile / 2
-	var bodyY int32 = headY + headRadius
+	var bodyY int32 = headY + tile/8
 
 	// head
-	rl.DrawCircleLines(headX, headY, 4, rl.SkyBlue)
+	rl.DrawCircleLines(headX, headY, float32(tile/8), rl.SkyBlue)
 	// body
-	rl.DrawLine(bodyX, bodyY, bodyX, tile-4, rl.SkyBlue)
+	rl.DrawLine(bodyX, bodyY, bodyX, tile-tile/6, rl.SkyBlue)
 
 	// arms
 	rl.DrawLine(bodyX, tile-tile/3, tile/4+int32(armSwing), tile-tile/2, rl.SkyBlue)
 	rl.DrawLine(bodyX, tile-tile/3, tile-tile/4+int32(armSwing), tile-tile/2, rl.SkyBlue)
 
 	// legs
-	rl.DrawLine(bodyX, tile-4, tile/4, tile, rl.SkyBlue)
-	rl.DrawLine(bodyX, tile-4, tile-tile/4, tile, rl.SkyBlue)
+	rl.DrawLine(bodyX, tile-tile/6, tile/4, tile, rl.SkyBlue)
+	rl.DrawLine(bodyX, tile-tile/6, tile-tile/4, tile, rl.SkyBlue)
 }
