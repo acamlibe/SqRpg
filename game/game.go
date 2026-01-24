@@ -11,6 +11,10 @@ import (
 type Game struct {
 	Grid   *Grid
 	Player *entities.Player
+
+	playerTile *Tile
+	playerRow  int
+	playerCol  int
 }
 
 func NewGame(rows, cols int) *Game {
@@ -20,11 +24,35 @@ func NewGame(rows, cols int) *Game {
 }
 
 func (g *Game) Input() {
-
+	if rl.IsKeyPressed(rl.KeyA) || rl.IsKeyPressed(rl.KeyLeft) {
+		g.movePlayerTo(g.playerRow, g.playerCol-1)
+	} else if rl.IsKeyPressed(rl.KeyW) || rl.IsKeyPressed(rl.KeyUp) {
+		g.movePlayerTo(g.playerRow-1, g.playerCol)
+	} else if rl.IsKeyPressed(rl.KeyD) || rl.IsKeyPressed(rl.KeyRight) {
+		g.movePlayerTo(g.playerRow, g.playerCol+1)
+	} else if rl.IsKeyPressed(rl.KeyS) || rl.IsKeyPressed(rl.KeyDown) {
+		g.movePlayerTo(g.playerRow+1, g.playerCol)
+	}
 }
 
 func (g *Game) Update() {
 	g.Player.AnimTime += rl.GetFrameTime()
+}
+
+func (g *Game) movePlayerTo(row, col int) {
+	tileMap := g.Grid.Tiles
+
+	tile := &tileMap[row][col]
+	tile.Entity = g.Player
+
+	g.playerRow = row
+	g.playerCol = col
+
+	if g.playerTile != nil {
+		g.playerTile.Entity = nil
+	}
+
+	g.playerTile = tile
 }
 
 func (g *Game) generateWorld() {
@@ -32,7 +60,7 @@ func (g *Game) generateWorld() {
 		return
 	}
 
-	tiles := *g.Grid.Tiles
+	tiles := g.Grid.Tiles
 	rows := len(tiles)
 	if rows == 0 {
 		return
@@ -54,7 +82,8 @@ func (g *Game) generateWorld() {
 	// Place player randomly
 	playerRow := rng.Intn(rows)
 	playerCol := rng.Intn(cols)
-	tiles[playerRow][playerCol].Entity = g.Player
+
+	g.movePlayerTo(playerRow, playerCol)
 
 	// Small grove around player (but keep immediate neighbors open)
 	for y := playerRow - 2; y <= playerRow+2; y++ {
