@@ -1,14 +1,41 @@
 package entities
 
 import (
+	"math"
+
 	"github.com/acamlibe/SqRpg/constants"
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
+const (
+	headRadius = 4
+)
+
 type Player struct {
+	AnimTime float32
 }
 
 func (p *Player) DrawLocal() {
-	rl.DrawCircle(constants.TileSize/2, constants.TileSize/2, constants.TileSize/2, rl.Blue)
-	rl.DrawText("P", constants.TileSize/2-(rl.MeasureText("P", 10)/2), constants.TileSize/2-(rl.MeasureText("P", 10)/2), 10, rl.White)
+	var tile int32 = constants.TileSize
+
+	bob := float32(math.Sin(float64(p.AnimTime)*3.0)) * 1.2
+	armSwing := float32(math.Sin(float64(p.AnimTime)*4.0)) * 1.1
+
+	var headX int32 = tile / 2
+	var headY int32 = tile/4 + int32(bob)
+	var bodyX int32 = tile / 2
+	var bodyY int32 = headY + headRadius
+
+	// head
+	rl.DrawCircleLines(headX, headY, 4, rl.SkyBlue)
+	// body
+	rl.DrawLine(bodyX, bodyY, bodyX, tile-4, rl.SkyBlue)
+
+	// arms
+	rl.DrawLine(bodyX, tile-tile/3, tile/4+int32(armSwing), tile-tile/2, rl.SkyBlue)
+	rl.DrawLine(bodyX, tile-tile/3, tile-tile/4+int32(armSwing), tile-tile/2, rl.SkyBlue)
+
+	// legs
+	rl.DrawLine(bodyX, tile-4, tile/4, tile, rl.SkyBlue)
+	rl.DrawLine(bodyX, tile-4, tile-tile/4, tile, rl.SkyBlue)
 }

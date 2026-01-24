@@ -3,9 +3,9 @@ package constants
 import rl "github.com/gen2brain/raylib-go/raylib"
 
 const (
-	TileSize     = 20
+	TileSize     = 32
 	ScreenWidth  = 1280
-	ScreenHeight = 900
+	ScreenHeight = 928
 	FPS          = 60
 	SidebarWidth = 400
 	GridPadding  = 20

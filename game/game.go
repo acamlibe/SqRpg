@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/acamlibe/SqRpg/game/entities"
+	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 type Game struct {
@@ -23,7 +24,7 @@ func (g *Game) Input() {
 }
 
 func (g *Game) Update() {
-
+	g.Player.AnimTime += rl.GetFrameTime()
 }
 
 func (g *Game) generateWorld() {
@@ -44,8 +45,8 @@ func (g *Game) generateWorld() {
 	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	// Clear any existing entities
-	for y := 0; y < rows; y++ {
-		for x := 0; x < cols; x++ {
+	for y := range rows {
+		for x := range cols {
 			tiles[y][x].Entity = nil
 		}
 	}
@@ -77,11 +78,11 @@ func (g *Game) generateWorld() {
 	seedCount := max(3, (rows*cols)/150)
 	baseWalk := max(10, (rows*cols)/40)
 
-	for i := 0; i < seedCount; i++ {
+	for range seedCount {
 		sy, sx := rng.Intn(rows), rng.Intn(cols)
 		walkLen := baseWalk + rng.Intn(baseWalk/2+1)
 
-		for step := 0; step < walkLen; step++ {
+		for range walkLen {
 			if tiles[sy][sx].Entity == nil {
 				tiles[sy][sx].Entity = &entities.Tree{}
 			}
@@ -113,8 +114,8 @@ func (g *Game) generateWorld() {
 	}
 
 	// Simple smoothing pass to make blobs feel more organic
-	for y := 0; y < rows; y++ {
-		for x := 0; x < cols; x++ {
+	for y := range rows {
+		for x := range cols {
 			if y == playerRow && x == playerCol {
 				continue
 			}

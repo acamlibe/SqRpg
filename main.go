@@ -18,6 +18,8 @@ func main() {
 	game := game.NewGame(int((gameWindow.Box.Height-constants.GridPadding*2)/constants.TileSize), int((gameWindow.Box.Width-constants.GridPadding*2)/constants.TileSize))
 
 	for !rl.WindowShouldClose() {
+		game.Update()
+
 		rl.BeginDrawing()
 		rl.ClearBackground(constants.BackgroundColor)
 
