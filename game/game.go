@@ -8,7 +8,6 @@ import (
 
 	"github.com/acamlibe/SqRpg/constants"
 	"github.com/acamlibe/SqRpg/game/entities"
-	"github.com/acamlibe/SqRpg/utils"
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
@@ -30,6 +29,8 @@ type Game struct {
 	pathStep      int
 	pathTargetRow int
 	pathTargetCol int
+
+	hoverTile *Tile
 }
 
 func NewGame(rows, cols int) *Game {
@@ -47,16 +48,8 @@ func (g *Game) Input() {
 	row := g.playerRow
 	col := g.playerCol
 
-	tileSize := constants.TileSize
-	mouseX := int(rl.GetMouseX())
-	mouseY := int(rl.GetMouseY())
-
 	if rl.IsMouseButtonReleased(rl.MouseButtonLeft) {
-		col = (mouseX - constants.GridPadding) / tileSize
-		row = (mouseY - constants.GridPadding) / tileSize
-
-		row = utils.IntMin(utils.IntMax(row, 0), len(g.Grid.Tiles)-1)
-		col = utils.IntMin(utils.IntMax(col, 0), len(g.Grid.Tiles[0])-1)
+		row, col = getMousePos()
 
 		g.targetRow = row
 		g.targetCol = col
@@ -73,6 +66,25 @@ func (g *Game) Update() {
 		g.moveCooldown -= dt
 	}
 
+	moveStep(g)
+
+	row, col := getMousePos()
+	g.hoverTile = &g.Grid.Tiles[row][col]
+}
+
+func getMousePos() (int, int) {
+	mouseX := int(rl.GetMouseX())
+	mouseY := int(rl.GetMouseY())
+
+	tileSize := constants.TileSize
+
+	col := (mouseX - constants.GridPadding) / tileSize
+	row := (mouseY - constants.GridPadding) / tileSize
+
+	return row, col
+}
+
+func moveStep(g *Game) {
 	if g.moveCooldown > 0 {
 		return // too soon to move
 	}
@@ -99,6 +111,7 @@ func (g *Game) Update() {
 		g.pathStep++
 		g.moveCooldown = g.moveCooldownTime // reset cooldown
 	}
+	return
 }
 
 func (g *Game) movePlayerTo(row, col int) bool {

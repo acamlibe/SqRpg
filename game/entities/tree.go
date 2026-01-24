@@ -31,4 +31,9 @@ func (t *Tree) DrawLocal() {
 	rl.DrawCircle(foliageX, foliageY-tile/6, float32(tile/5), rl.Lime)
 	rl.DrawCircle(foliageX-tile/6, foliageY+tile/16, float32(tile/5), rl.Lime)
 	rl.DrawCircle(foliageX+tile/10, foliageY+tile/18, float32(tile/5), rl.Lime)
+
+	// apple
+	rl.DrawCircle(foliageX+tile/16, foliageY, float32(tile/16), rl.Red)
+	rl.DrawCircle(foliageX-tile/16, foliageY-tile/8, float32(tile/16), rl.Red)
+	rl.DrawCircle(foliageX-tile/8, foliageY+tile/8, float32(tile/16), rl.Red)
 }
