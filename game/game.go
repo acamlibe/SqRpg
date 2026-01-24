@@ -1,6 +1,7 @@
 package game
 
 import (
+	"container/heap"
 	"math/rand"
 	"slices"
 	"time"
@@ -24,6 +25,11 @@ type Game struct {
 
 	targetRow int
 	targetCol int
+
+	path          []gridPos
+	pathStep      int
+	pathTargetRow int
+	pathTargetCol int
 }
 
 func NewGame(rows, cols int) *Game {
@@ -31,7 +37,7 @@ func NewGame(rows, cols int) *Game {
 		Grid:             NewGrid(rows, cols),
 		Player:           &entities.Player{},
 		moveCooldown:     0,
-		moveCooldownTime: 0.25, // move every 0.25 seconds (4 moves/sec)
+		moveCooldownTime: 0.2, // move every 0.25 seconds (4 moves/sec)
 	}
 	g.generateWorld()
 	return g
@@ -54,6 +60,8 @@ func (g *Game) Input() {
 
 		g.targetRow = row
 		g.targetCol = col
+		g.path = nil
+		g.pathStep = 0
 	}
 }
 
@@ -69,31 +77,36 @@ func (g *Game) Update() {
 		return // too soon to move
 	}
 
-	nextRow := g.playerRow
-	nextCol := g.playerCol
+	if g.targetRow == g.playerRow && g.targetCol == g.playerCol {
+		g.path = nil
+		g.pathStep = 0
+		return
+	}
 
-	if g.targetRow != nextRow || g.targetCol != nextCol {
-		if nextRow < g.targetRow {
-			nextRow++
-		} else if nextRow > g.targetRow {
-			nextRow--
-		} else if nextCol < g.targetCol {
-			nextCol++
-		} else if nextCol > g.targetCol {
-			nextCol--
-		}
+	if g.path == nil || g.pathStep >= len(g.path) || g.pathTargetRow != g.targetRow || g.pathTargetCol != g.targetCol || !g.isPlayerOnPath() {
+		g.path = g.findPathAStar(g.playerRow, g.playerCol, g.targetRow, g.targetCol)
+		g.pathStep = 1
+		g.pathTargetRow = g.targetRow
+		g.pathTargetCol = g.targetCol
+	}
 
-		g.movePlayerTo(nextRow, nextCol)
+	if g.path == nil || g.pathStep >= len(g.path) {
+		return
+	}
+
+	next := g.path[g.pathStep]
+	if g.movePlayerTo(next.Row, next.Col) {
+		g.pathStep++
 		g.moveCooldown = g.moveCooldownTime // reset cooldown
 	}
 }
 
-func (g *Game) movePlayerTo(row, col int) {
+func (g *Game) movePlayerTo(row, col int) bool {
 	tileMap := g.Grid.Tiles
 	tile := &tileMap[row][col]
 
 	if !tile.Walkable {
-		return
+		return false
 	}
 
 	g.playerRow = row
@@ -111,6 +124,173 @@ func (g *Game) movePlayerTo(row, col int) {
 	tile.Entities = append(tile.Entities, g.Player)
 
 	g.playerTile = tile
+	return true
+}
+
+func (g *Game) isPlayerOnPath() bool {
+	if len(g.path) == 0 {
+		return false
+	}
+	step := g.pathStep - 1
+	if step < 0 || step >= len(g.path) {
+		return false
+	}
+	return g.path[step].Row == g.playerRow && g.path[step].Col == g.playerCol
+}
+
+type gridPos struct {
+	Row int
+	Col int
+}
+
+type pathNode struct {
+	Pos   gridPos
+	GCost int
+	FCost int
+	Index int
+}
+
+type nodePriorityQueue []*pathNode
+
+func (pq nodePriorityQueue) Len() int { return len(pq) }
+func (pq nodePriorityQueue) Less(i, j int) bool {
+	if pq[i].FCost == pq[j].FCost {
+		return pq[i].GCost < pq[j].GCost
+	}
+	return pq[i].FCost < pq[j].FCost
+}
+func (pq nodePriorityQueue) Swap(i, j int) {
+	pq[i], pq[j] = pq[j], pq[i]
+	pq[i].Index = i
+	pq[j].Index = j
+}
+func (pq *nodePriorityQueue) Push(x interface{}) {
+	n := x.(*pathNode)
+	n.Index = len(*pq)
+	*pq = append(*pq, n)
+}
+func (pq *nodePriorityQueue) Pop() interface{} {
+	old := *pq
+	n := len(old)
+	item := old[n-1]
+	old[n-1] = nil
+	item.Index = -1
+	*pq = old[0 : n-1]
+	return item
+}
+
+func (g *Game) findPathAStar(startRow, startCol, goalRow, goalCol int) []gridPos {
+	if g.Grid == nil || g.Grid.Tiles == nil {
+		return nil
+	}
+	rows := len(g.Grid.Tiles)
+	if rows == 0 {
+		return nil
+	}
+	cols := len(g.Grid.Tiles[0])
+	if cols == 0 {
+		return nil
+	}
+
+	if startRow == goalRow && startCol == goalCol {
+		return []gridPos{{Row: startRow, Col: startCol}}
+	}
+
+	if goalRow < 0 || goalRow >= rows || goalCol < 0 || goalCol >= cols {
+		return nil
+	}
+	if !g.Grid.Tiles[goalRow][goalCol].Walkable {
+		return nil
+	}
+
+	start := gridPos{Row: startRow, Col: startCol}
+	goal := gridPos{Row: goalRow, Col: goalCol}
+
+	startKey := posKey(start.Row, start.Col, cols)
+	goalKey := posKey(goal.Row, goal.Col, cols)
+
+	open := &nodePriorityQueue{}
+	heap.Init(open)
+	startNode := &pathNode{Pos: start, GCost: 0, FCost: manhattan(start, goal)}
+	heap.Push(open, startNode)
+
+	cameFrom := make(map[int]int, rows*cols)
+	gScore := map[int]int{startKey: 0}
+	openNodes := map[int]*pathNode{startKey: startNode}
+
+	for open.Len() > 0 {
+		current := heap.Pop(open).(*pathNode)
+		currentKey := posKey(current.Pos.Row, current.Pos.Col, cols)
+		delete(openNodes, currentKey)
+
+		if currentKey == goalKey {
+			return reconstructPath(cameFrom, currentKey, startKey, cols)
+		}
+
+		neighbors := [][2]int{{-1, 0}, {1, 0}, {0, -1}, {0, 1}}
+		for _, d := range neighbors {
+			nr := current.Pos.Row + d[0]
+			nc := current.Pos.Col + d[1]
+			if nr < 0 || nr >= rows || nc < 0 || nc >= cols {
+				continue
+			}
+			if !g.Grid.Tiles[nr][nc].Walkable {
+				continue
+			}
+
+			neighborKey := posKey(nr, nc, cols)
+			candidateG := gScore[currentKey] + 1
+
+			prevG, ok := gScore[neighborKey]
+			if !ok || candidateG < prevG {
+				cameFrom[neighborKey] = currentKey
+				gScore[neighborKey] = candidateG
+				f := candidateG + manhattan(gridPos{Row: nr, Col: nc}, goal)
+
+				if existing, exists := openNodes[neighborKey]; exists {
+					existing.GCost = candidateG
+					existing.FCost = f
+					heap.Fix(open, existing.Index)
+				} else {
+					n := &pathNode{Pos: gridPos{Row: nr, Col: nc}, GCost: candidateG, FCost: f}
+					heap.Push(open, n)
+					openNodes[neighborKey] = n
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func reconstructPath(cameFrom map[int]int, currentKey, startKey, cols int) []gridPos {
+	path := []gridPos{keyToPos(currentKey, cols)}
+	for currentKey != startKey {
+		prev, ok := cameFrom[currentKey]
+		if !ok {
+			return nil
+		}
+		currentKey = prev
+		path = append(path, keyToPos(currentKey, cols))
+	}
+
+	for i, j := 0, len(path)-1; i < j; i, j = i+1, j-1 {
+		path[i], path[j] = path[j], path[i]
+	}
+
+	return path
+}
+
+func manhattan(a, b gridPos) int {
+	return abs(a.Row-b.Row) + abs(a.Col-b.Col)
+}
+
+func posKey(row, col, cols int) int {
+	return row*cols + col
+}
+
+func keyToPos(key, cols int) gridPos {
+	return gridPos{Row: key / cols, Col: key % cols}
 }
 
 func (g *Game) generateWorld() {
@@ -143,6 +323,9 @@ func (g *Game) generateWorld() {
 
 	g.playerRow = playerRow
 	g.playerCol = playerCol
+
+	g.targetRow = playerRow
+	g.targetCol = playerCol
 
 	g.movePlayerTo(playerRow, playerCol)
 
