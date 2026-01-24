@@ -9,7 +9,7 @@ import (
 )
 
 type Grid struct {
-	Tiles [][]Tile
+	Tiles *[][]Tile
 }
 
 type Tile struct {
@@ -35,11 +35,11 @@ func NewGrid(rows, cols int) *Grid {
 
 	tileMap[5][5].Entity = &entities.Player{}
 
-	return &Grid{Tiles: tileMap}
+	return &Grid{Tiles: &tileMap}
 }
 
 func (g *Grid) DrawLocal() {
-	for rowIdx, row := range g.Tiles {
+	for rowIdx, row := range *g.Tiles {
 		for colIdx, tile := range row {
 			g.drawTile(rowIdx, colIdx, &tile)
 		}
