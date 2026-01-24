@@ -8,7 +8,7 @@ import (
 type Tree struct {
 }
 
-func (t Tree) DrawLocal() {
+func (t *Tree) DrawLocal() {
 	rl.DrawRectangle(0, 0, constants.TileSize, constants.TileSize, rl.Green)
 	rl.DrawRectangle(constants.TileSize/2, 0, 2, constants.TileSize, rl.Brown)
 }

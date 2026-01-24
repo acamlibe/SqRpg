@@ -16,7 +16,7 @@ type Tile struct {
 	Entity drawable.Drawable
 }
 
-func NewGrid(rows, cols int) Grid {
+func NewGrid(rows, cols int) *Grid {
 	tileMap := make([][]Tile, rows)
 
 	for y := range tileMap {
@@ -26,27 +26,27 @@ func NewGrid(rows, cols int) Grid {
 			t := Tile{}
 
 			if utils.RandChance(10) {
-				t.Entity = entities.Tree{}
+				t.Entity = &entities.Tree{}
 			}
 
 			tileMap[y][x] = t
 		}
 	}
 
-	tileMap[5][5].Entity = entities.Player{}
+	tileMap[5][5].Entity = &entities.Player{}
 
-	return Grid{Tiles: tileMap}
+	return &Grid{Tiles: tileMap}
 }
 
 func (g *Grid) DrawLocal() {
 	for rowIdx, row := range g.Tiles {
 		for colIdx, tile := range row {
-			g.drawTile(rowIdx, colIdx, tile)
+			g.drawTile(rowIdx, colIdx, &tile)
 		}
 	}
 }
 
-func (g *Grid) drawTile(row, col int, tile Tile) {
+func (g *Grid) drawTile(row, col int, tile *Tile) {
 	rl.PushMatrix()
 	rl.Translatef(float32(col*constants.TileSize), float32(row*constants.TileSize), 0)
 
