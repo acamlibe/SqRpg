@@ -2,6 +2,7 @@ package game
 
 import (
 	"github.com/acamlibe/SqRpg/constants"
+	"github.com/acamlibe/SqRpg/drawable"
 	"github.com/acamlibe/SqRpg/game/entities"
 	"github.com/acamlibe/SqRpg/utils"
 	rl "github.com/gen2brain/raylib-go/raylib"
@@ -12,11 +13,7 @@ type Grid struct {
 }
 
 type Tile struct {
-	Entity Drawable
-}
-
-type Drawable interface {
-	DrawLocal()
+	Entity drawable.Drawable
 }
 
 func NewGrid(rows, cols int) Grid {
@@ -39,12 +36,10 @@ func NewGrid(rows, cols int) Grid {
 	return Grid{Tiles: tileMap}
 }
 
-func (g *Grid) Draw() {
+func (g *Grid) DrawLocal() {
 	for rowIdx, row := range g.Tiles {
 		for colIdx, tile := range row {
-			if tile.Entity != nil {
-				g.drawTile(rowIdx, colIdx, tile)
-			}
+			g.drawTile(rowIdx, colIdx, tile)
 		}
 	}
 }
@@ -52,6 +47,13 @@ func (g *Grid) Draw() {
 func (g *Grid) drawTile(row, col int, tile Tile) {
 	rl.PushMatrix()
 	rl.Translatef(float32(col*constants.TileSize), float32(row*constants.TileSize), 0)
-	tile.Entity.DrawLocal()
+
+	if tile.Entity != nil {
+		tile.Entity.DrawLocal()
+	} else {
+		// Empty space
+		rl.DrawRectangle(0, 0, constants.TileSize, constants.TileSize, rl.Black)
+	}
+
 	rl.PopMatrix()
 }

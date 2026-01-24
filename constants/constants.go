@@ -7,8 +7,15 @@ const (
 	ScreenWidth  = 1280
 	ScreenHeight = 900
 	FPS          = 60
+	SidebarWidth = 400
+	GridPadding  = 20
 )
 
 var (
 	BackgroundColor = rl.Black
+)
+
+var (
+	GunmetalColor = rl.Color{R: 40, G: 45, B: 50, A: 255}
+	CharcoalGray  = rl.Color{R: 35, G: 35, B: 40, A: 255}
 )
