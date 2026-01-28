@@ -24,7 +24,7 @@ func main() {
 		rl.BeginDrawing()
 		rl.ClearBackground(constants.BackgroundColor)
 
-		gameWindow.Draw(game.Grid)
+		gameWindow.Draw(game.World)
 		sidebar.Draw()
 
 		rl.EndDrawing()

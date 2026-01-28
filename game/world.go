@@ -3,11 +3,14 @@ package game
 import (
 	"github.com/acamlibe/SqRpg/constants"
 	"github.com/acamlibe/SqRpg/drawable"
+	"github.com/acamlibe/SqRpg/game/entities"
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
-type Grid struct {
-	Tiles [][]Tile
+type World struct {
+	Tiles   [][]Tile
+	CameraX int
+	CameraY int
 }
 
 type Tile struct {
@@ -15,7 +18,7 @@ type Tile struct {
 	Walkable bool
 }
 
-func NewGrid(rows, cols int) *Grid {
+func NewWorld(rows, cols int) *World {
 	tileMap := make([][]Tile, rows)
 
 	for y := range tileMap {
@@ -26,22 +29,55 @@ func NewGrid(rows, cols int) *Grid {
 		}
 	}
 
-	return &Grid{Tiles: tileMap}
+	return &World{Tiles: tileMap}
 }
 
-func (g *Grid) AddEntity(entity drawable.Drawable, row, col int) {
+func LoadWorld(data [][]int) *World {
+	rows := len(data)
+	cols := len(data[0])
+
+	world := NewWorld(rows, cols)
+
+	for row := range data {
+		for col := range data[row] {
+			world.Tiles[row][col] = getEntity(data[row][col])
+		}
+	}
+
+	return world
+}
+
+func getEntity(n int) Tile {
+	tile := Tile{}
+
+	if n == 101 {
+		tile.Entities = append(tile.Entities, &entities.Water{})
+	}
+
+	return tile
+}
+
+func (g *World) AddEntity(entity drawable.Drawable, row, col int) {
 	g.Tiles[row][col].Entities = append(g.Tiles[row][col].Entities, entity)
 }
 
-func (g *Grid) DrawLocal() {
+func (g *World) DrawLocal() {
 	for rowIdx, row := range g.Tiles {
+		if rowIdx != g.CameraY {
+			continue
+		}
+
 		for colIdx, tile := range row {
+			if colIdx != g.CameraX {
+				continue
+			}
+
 			g.drawTile(rowIdx, colIdx, &tile)
 		}
 	}
 }
 
-func (g *Grid) drawTile(row, col int, tile *Tile) {
+func (g *World) drawTile(row, col int, tile *Tile) {
 	rl.PushMatrix()
 	rl.Translatef(float32(col*constants.TileSize), float32(row*constants.TileSize), 0)
 
