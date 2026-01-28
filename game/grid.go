@@ -29,6 +29,10 @@ func NewGrid(rows, cols int) *Grid {
 	return &Grid{Tiles: tileMap}
 }
 
+func (g *Grid) AddEntity(entity drawable.Drawable, row, col int) {
+	g.Tiles[row][col].Entities = append(g.Tiles[row][col].Entities, entity)
+}
+
 func (g *Grid) DrawLocal() {
 	for rowIdx, row := range g.Tiles {
 		for colIdx, tile := range row {
