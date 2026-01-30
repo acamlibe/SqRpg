@@ -1,16 +1,12 @@
 package game
 
 import (
-	"github.com/acamlibe/SqRpg/constants"
 	"github.com/acamlibe/SqRpg/drawable"
 	"github.com/acamlibe/SqRpg/game/entities"
-	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 type World struct {
-	Tiles   [][]Tile
-	CameraX int
-	CameraY int
+	Tiles [][]Tile
 }
 
 type Tile struct {
@@ -50,8 +46,13 @@ func LoadWorld(data [][]int) *World {
 func getEntity(n int) Tile {
 	tile := Tile{}
 
-	if n == 101 {
+	switch n {
+	case 1:
+		tile.Walkable = false
 		tile.Entities = append(tile.Entities, &entities.Water{})
+	case 101:
+		tile.Walkable = false
+		tile.Entities = append(tile.Entities, &entities.Tree{})
 	}
 
 	return tile
@@ -59,43 +60,4 @@ func getEntity(n int) Tile {
 
 func (g *World) AddEntity(entity drawable.Drawable, row, col int) {
 	g.Tiles[row][col].Entities = append(g.Tiles[row][col].Entities, entity)
-}
-
-func (g *World) DrawLocal() {
-	for rowIdx, row := range g.Tiles {
-		if rowIdx != g.CameraY {
-			continue
-		}
-
-		for colIdx, tile := range row {
-			if colIdx != g.CameraX {
-				continue
-			}
-
-			g.drawTile(rowIdx, colIdx, &tile)
-		}
-	}
-}
-
-func (g *World) drawTile(row, col int, tile *Tile) {
-	rl.PushMatrix()
-	rl.Translatef(float32(col*constants.TileSize), float32(row*constants.TileSize), 0)
-
-	tileX, tileY := 0, 0
-	tileSize := constants.TileSize
-
-	rl.DrawRectangle(int32(tileX), int32(tileY), int32(tileSize), int32(tileSize), rl.Black)
-
-	for _, entity := range tile.Entities {
-		entity.DrawLocal()
-	}
-
-	// Draw subtle outline
-	rl.DrawRectangleLines(
-		int32(tileX), int32(tileY),
-		int32(tileSize), int32(tileSize),
-		rl.Color{R: 60, G: 60, B: 60, A: 80}, // very subtle dark line, semi-transparent
-	)
-
-	rl.PopMatrix()
 }

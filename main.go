@@ -15,7 +15,7 @@ func main() {
 	gameWindow := ui.NewGameWindow()
 	sidebar := ui.NewSidebar()
 
-	game := game.NewGame(int((gameWindow.Box.Height-constants.GridPadding*2)/constants.TileSize), int((gameWindow.Box.Width-constants.GridPadding*2)/constants.TileSize))
+	game := game.NewGame(13, 13)
 
 	for !rl.WindowShouldClose() {
 		game.Input()
@@ -24,7 +24,7 @@ func main() {
 		rl.BeginDrawing()
 		rl.ClearBackground(constants.BackgroundColor)
 
-		gameWindow.Draw(game.World)
+		gameWindow.Draw(game)
 		sidebar.Draw()
 
 		rl.EndDrawing()

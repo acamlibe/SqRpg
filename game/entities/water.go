@@ -8,8 +8,20 @@ import (
 type Water struct {
 }
 
-func (t *Water) DrawLocal() {
-	var tile int32 = constants.TileSize
+func (w *Water) DrawLocal() {
+	tile := int32(constants.TileSize)
 
-	rl.DrawRectangle(0, 0, tile, tile, rl.SkyBlue)
+	// Base water color
+	rl.DrawRectangle(0, 0, tile, tile, rl.Color{
+		R: 70, G: 130, B: 180, A: 255,
+	})
+
+	// Soft wave highlights
+	for y := int32(3); y < tile; y += 6 {
+		rl.DrawLine(
+			2, y,
+			tile-3, y,
+			rl.Color{R: 180, G: 220, B: 255, A: 50},
+		)
+	}
 }
