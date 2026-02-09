@@ -1,4 +1,4 @@
-package entities
+package tiles
 
 import (
 	"github.com/acamlibe/SqRpg/constants"
@@ -6,6 +6,10 @@ import (
 )
 
 type Water struct {
+}
+
+func (t *Water) Walkable() bool {
+	return false
 }
 
 func (w *Water) DrawLocal() {

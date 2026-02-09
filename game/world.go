@@ -2,62 +2,38 @@ package game
 
 import (
 	"github.com/acamlibe/SqRpg/drawable"
-	"github.com/acamlibe/SqRpg/game/entities"
+	"github.com/acamlibe/SqRpg/game/tiles"
 )
 
 type World struct {
-	Tiles [][]Tile
-}
-
-type Tile struct {
-	Entities []drawable.Drawable
-	Walkable bool
-}
-
-func NewWorld(rows, cols int) *World {
-	tileMap := make([][]Tile, rows)
-
-	for y := range tileMap {
-		tileMap[y] = make([]Tile, cols)
-
-		for x := range tileMap[y] {
-			tileMap[y][x] = Tile{Walkable: true}
-		}
-	}
-
-	return &World{Tiles: tileMap}
+	Tiles    [][]tiles.Tile
+	Entities [][]drawable.Drawable
 }
 
 func LoadWorld(data [][]int) *World {
 	rows := len(data)
 	cols := len(data[0])
 
-	world := NewWorld(rows, cols)
+	tileMap := make([][]tiles.Tile, rows)
 
-	for row := range data {
-		for col := range data[row] {
-			world.Tiles[row][col] = getEntity(data[row][col])
+	for y := range tileMap {
+		tileMap[y] = make([]tiles.Tile, cols)
+
+		for x := range tileMap[y] {
+			tileMap[y][x] = getTile(data[y][x])
 		}
 	}
 
-	return world
+	return &World{Tiles: tileMap}
 }
 
-func getEntity(n int) Tile {
-	tile := Tile{}
-
+func getTile(n int) tiles.Tile {
 	switch n {
 	case 1:
-		tile.Walkable = false
-		tile.Entities = append(tile.Entities, &entities.Water{})
+		return &tiles.Water{}
 	case 101:
-		tile.Walkable = false
-		tile.Entities = append(tile.Entities, &entities.Tree{})
+		return &tiles.Tree{}
 	}
 
-	return tile
-}
-
-func (g *World) AddEntity(entity drawable.Drawable, row, col int) {
-	g.Tiles[row][col].Entities = append(g.Tiles[row][col].Entities, entity)
+	return &tiles.Air{}
 }

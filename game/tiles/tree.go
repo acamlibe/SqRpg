@@ -1,4 +1,4 @@
-package entities
+package tiles
 
 import (
 	"github.com/acamlibe/SqRpg/constants"
@@ -6,6 +6,10 @@ import (
 )
 
 type Tree struct {
+}
+
+func (t *Tree) Walkable() bool {
+	return false
 }
 
 func (t *Tree) DrawLocal() {

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/acamlibe/SqRpg/constants"
+	"github.com/acamlibe/SqRpg/drawable"
 	"github.com/acamlibe/SqRpg/game/entities"
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
@@ -37,9 +38,17 @@ func NewGame(rows, cols int) *Game {
 }
 
 func (g *Game) Input() {
-	if rl.IsKeyPressed(rl.KeyD) {
-		g.playerX++
-		g.movePlayer(g.playerY, g.playerX, false)
+	if rl.IsKeyPressed(rl.KeyD) || rl.IsKeyPressed(rl.KeyRight) {
+		g.movePlayer(g.playerY, g.playerX+1, false)
+	}
+	if rl.IsKeyPressed(rl.KeyS) || rl.IsKeyPressed(rl.KeyDown) {
+		g.movePlayer(g.playerY+1, g.playerX, false)
+	}
+	if rl.IsKeyPressed(rl.KeyA) || rl.IsKeyPressed(rl.KeyLeft) {
+		g.movePlayer(g.playerY, g.playerX-1, false)
+	}
+	if rl.IsKeyPressed(rl.KeyW) || rl.IsKeyPressed(rl.KeyUp) {
+		g.movePlayer(g.playerY-1, g.playerX, false)
 	}
 }
 
@@ -52,38 +61,54 @@ func (g *Game) Update() {
 func (g *Game) DrawLocal() {
 	for rowIdx, row := range g.World.Tiles[g.Camera.WorldY : g.Camera.WorldY+g.Camera.Rows] {
 		for colIdx, tile := range row[g.Camera.WorldX : g.Camera.WorldX+g.Camera.Cols] {
-			g.drawTile(rowIdx, colIdx, &tile)
+			worldRow := g.Camera.WorldY + rowIdx
+			worldCol := g.Camera.WorldX + colIdx
+
+			g.draw(rowIdx, colIdx, tile)
+
+			if g.playerX == worldCol && g.playerY == worldRow {
+				g.draw(rowIdx, colIdx, g.Player)
+			}
 		}
 	}
+
 }
 
 func (g *Game) movePlayer(row, col int, initial bool) {
-	if row < 0 || col < 0 || row >= len(g.World.Tiles) || col >= len(g.World.Tiles[row]) {
+	worldRows := len(g.World.Tiles)
+	worldCols := len(g.World.Tiles[0])
+
+	// bounds check
+	if row < 0 || col < 0 || row >= worldRows || col >= worldCols {
 		return
 	}
 
-	if !initial && !g.World.Tiles[row][col].Walkable {
+	// walkable check
+	if !initial && !g.World.Tiles[row][col].Walkable() {
 		return
 	}
 
-	if !initial {
-		entities := g.World.Tiles[g.playerY][g.playerX].Entities
-		filtered := entities[:0]
-		for _, e := range entities {
-			if e != g.Player {
-				filtered = append(filtered, e)
-			}
-		}
-		g.World.Tiles[g.playerY][g.playerX].Entities = filtered
-	}
-
+	// move player
 	g.playerY = row
 	g.playerX = col
 
-	g.World.Tiles[g.playerY][g.playerX].Entities = append(g.World.Tiles[g.playerY][g.playerX].Entities, g.Player)
+	// clamp camera to world bounds
+	maxCamX := worldCols - g.Camera.Cols
+	maxCamY := worldRows - g.Camera.Rows
+
+	// center camera on player
+	camX := min(max(g.playerX-g.Camera.Cols/2, 0), maxCamX)
+	camY := min(max(g.playerY-g.Camera.Rows/2, 0), maxCamY)
+
+	g.Camera.WorldX = camX
+	g.Camera.WorldY = camY
 }
 
-func (g *Game) drawTile(row, col int, tile *Tile) {
+func (g *Game) draw(row, col int, drawable drawable.Drawable) {
+	if drawable == nil {
+		return
+	}
+
 	rl.PushMatrix()
 	rl.Translatef(float32(col*constants.TileSize), float32(row*constants.TileSize), 0)
 
@@ -92,9 +117,7 @@ func (g *Game) drawTile(row, col int, tile *Tile) {
 
 	rl.DrawRectangle(int32(tileX), int32(tileY), int32(tileSize), int32(tileSize), rl.Black)
 
-	for _, entity := range tile.Entities {
-		entity.DrawLocal()
-	}
+	drawable.DrawLocal()
 
 	// Draw subtle outline
 	rl.DrawRectangleLines(
@@ -136,7 +159,7 @@ func convert1Dto2D(original []int, m int, n int) [][]int {
 	}
 
 	twoD := make([][]int, m)
-	for i := 0; i < m; i++ {
+	for i := range m {
 		twoD[i] = original[i*n : (i+1)*n]
 	}
 
