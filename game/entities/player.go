@@ -8,7 +8,13 @@ import (
 )
 
 type Player struct {
+	X        int
+	Y        int
 	AnimTime float32
+}
+
+func (p *Player) Update(delta float32) {
+	p.AnimTime += delta
 }
 
 func (p *Player) DrawLocal() {

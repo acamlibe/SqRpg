@@ -21,11 +21,12 @@ func (w *Water) DrawLocal() {
 	})
 
 	// Soft wave highlights
-	for y := int32(3); y < tile; y += 6 {
-		rl.DrawLine(
-			2, y,
-			tile-3, y,
-			rl.Color{R: 180, G: 220, B: 255, A: 50},
-		)
+	for y := int32(3); y < tile; y += 12 {
+		// rl.DrawLine(
+		// 	2, y,
+		// 	tile-3, y,
+		// 	rl.Color{R: 180, G: 220, B: 255, A: 50},
+		// )
+		rl.DrawLineBezier(rl.Vector2{X: 0, Y: float32(y)}, rl.Vector2{X: float32(tile), Y: float32(y) * 1.4}, 1, rl.Color{R: 180, G: 220, B: 255, A: 50})
 	}
 }
